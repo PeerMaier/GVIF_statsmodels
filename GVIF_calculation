@@ -1,0 +1,37 @@
+dummy = data[["PRODUCT_ID_Target"]] #replace with dummy data
+
+########LÄUFT!
+
+
+print('-------Categorical VIF (GVIF): PRODUCT_ID_Target ---------------')
+
+X1 = patsy.dmatrix("0 + C(PRODUCT_ID_Target)", dummy, return_type = "dataframe")
+X2 = data[['avg_days_since_coupon_drop', 'avg_days_since_coupon_drop_comp', 'log_avg_item_current_unit_price_item', 'log_avg_item_current_unit_price_item_comp', 'log_transformed_daily_relative_benefit_per_item', 'log_transformed_daily_relative_benefit_per_item_comp']].copy() 
+
+
+
+print(X1.head())
+
+print(X2.head())
+
+tmp_gvif = np.linalg.det(X1.corr()) * np.linalg.det(X2.corr()) / \
+np.linalg.det(pd.concat([X1.reset_index(drop = True), X2.reset_index(drop = True)], axis = 1).corr()) #GVIF calculation
+
+tmp_gvif = pd.DataFrame([tmp_gvif], columns = ["GVIF"])
+tmp_gvif["GVIF^(1/2Df)"] = np.power(tmp_gvif["GVIF"], 1 / (2 * len(X1.columns)))
+print(tmp_gvif)
+
+
+#Plausi Check --> WORKS! --> Same as "normal" VIF values
+print('--------Continuous VIF: log_avg_item_current_unit_price_item_comp--------------')
+
+X1 = data[["log_avg_item_current_unit_price_item_comp"]].copy()
+X2 = patsy.dmatrix("0 + C(PRODUCT_ID_Target) ", dummy, return_type = "dataframe").iloc[:, 1:]
+X2 = pd.concat([X2.reset_index(drop = True), data[['avg_days_since_coupon_drop', 'avg_days_since_coupon_drop_comp', 'log_avg_item_current_unit_price_item', 'log_transformed_daily_relative_benefit_per_item', 'log_transformed_daily_relative_benefit_per_item_comp']].reset_index(drop=True)], axis = 1)
+print(X2.head())
+
+
+tmp_gvif = np.linalg.det(X1.corr()) * np.linalg.det(X2.corr()) / np.linalg.det(pd.concat([X1.reset_index(drop = True), X2], axis = 1).corr())
+tmp_gvif = pd.DataFrame([tmp_gvif], columns = ["GVIF"])
+tmp_gvif["GVIF^(1/2Df)"] = np.power(tmp_gvif["GVIF"], 1 / (2 * len(X1.columns)))
+print(tmp_gvif)
